@@ -26,10 +26,11 @@ export const GameSection: React.FC<Props> = ({ data, isActive, disabled, onClick
       disabled={disabled}
       className={`
         absolute w-24 h-24 rounded-full flex items-center justify-center
-        transition-all duration-100 transform preserve-3d
+        left-1/2 top-1/2 -ml-12 -mt-12
+        transition-all duration-100 transform preserve-3d touch-manipulation
         ${disabled ? 'cursor-default' : 'cursor-pointer hover:scale-110 active:scale-95'}
         border-4 border-gray-800/20 dark:border-white/10
-        ${isActive ? 'z-50' : 'z-auto'}
+        ${isActive ? 'z-50' : 'z-20'}
       `}
       style={{
         transform: `translate(${x}px, ${y}px) translateZ(${isActive ? '25px' : '0px'})`,
@@ -42,7 +43,7 @@ export const GameSection: React.FC<Props> = ({ data, isActive, disabled, onClick
       aria-label={data.label}
     >
       <div 
-        className={`transition-transform duration-100 ${isActive ? 'scale-125' : 'scale-100'}`}
+        className={`transition-transform duration-100 ${isActive ? 'scale-125' : 'scale-100'} pointer-events-none`}
       >
         <Icon 
           size={36} 

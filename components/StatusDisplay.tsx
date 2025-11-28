@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GameState } from '../types';
-import { Play, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Play, RotateCcw } from 'lucide-react';
 
 interface Props {
   gameState: GameState;
@@ -13,6 +13,17 @@ interface Props {
 export const StatusDisplay: React.FC<Props> = ({ gameState, score, timeLeftPct, onStart, onReset }) => {
   const isPlaying = gameState === GameState.PLAYING_SEQUENCE || gameState === GameState.PLAYER_TURN;
   const isGameOver = gameState === GameState.GAME_OVER;
+  
+  const [animateScore, setAnimateScore] = useState(false);
+
+  // Trigger animation when score increases
+  useEffect(() => {
+    if (score > 0) {
+      setAnimateScore(true);
+      const timer = setTimeout(() => setAnimateScore(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [score]);
 
   // Determine timer color
   const timerColor = timeLeftPct > 50 ? '#10B981' : timeLeftPct > 20 ? '#F59E0B' : '#EF4444';
@@ -54,9 +65,12 @@ export const StatusDisplay: React.FC<Props> = ({ gameState, score, timeLeftPct, 
         )}
 
         {isPlaying && (
-          <div className="flex flex-col items-center animate-pulse">
+          <div className="flex flex-col items-center">
             <span className="text-xs text-gray-500 font-bold uppercase mb-1">Score</span>
-            <span className="text-3xl font-arcade font-bold text-blue-600 dark:text-blue-400">
+            <span 
+              className={`text-3xl font-arcade font-bold transition-all duration-200 
+                ${animateScore ? 'animate-score-pop text-green-500 scale-125' : 'text-blue-600 dark:text-blue-400'}`}
+            >
               {score}
             </span>
           </div>

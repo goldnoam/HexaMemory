@@ -3,7 +3,7 @@ class AudioService {
   private gainNode: GainNode | null = null;
 
   constructor() {
-    // Lazy initialization to respect browser autoplay policies
+    // Lazy initialization
   }
 
   private init() {
@@ -14,7 +14,7 @@ class AudioService {
     }
   }
 
-  public playTone(frequency: number, duration: number = 0.3, type: OscillatorType = 'sine') {
+  public playTone(frequency: number, duration: number = 0.3) {
     this.init();
     if (!this.audioContext || !this.gainNode) return;
 
@@ -22,32 +22,74 @@ class AudioService {
       this.audioContext.resume();
     }
 
-    const oscillator = this.audioContext.createOscillator();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-
-    // Envelope for smoother sound
     const now = this.audioContext.currentTime;
-    const gain = this.audioContext.createGain();
-    gain.connect(this.audioContext.destination);
     
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Attack
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Decay
+    // Oscillator 1: Triangle for clear tone
+    const osc1 = this.audioContext.createOscillator();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(frequency, now);
 
-    oscillator.connect(gain);
-    oscillator.start(now);
-    oscillator.stop(now + duration);
+    // Oscillator 2: Sine for body/warmth
+    const osc2 = this.audioContext.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(frequency, now);
+
+    const mainGain = this.audioContext.createGain();
+    mainGain.connect(this.audioContext.destination);
+    
+    // Snappy Envelope
+    mainGain.gain.setValueAtTime(0, now);
+    mainGain.gain.linearRampToValueAtTime(0.25, now + 0.02); // Quick attack
+    mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Smooth decay
+
+    osc1.connect(mainGain);
+    osc2.connect(mainGain);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
   }
 
   public playError() {
-    this.playTone(150, 0.5, 'sawtooth');
-    setTimeout(() => this.playTone(100, 0.5, 'sawtooth'), 100);
+    this.init();
+    if (!this.audioContext) return;
+    const now = this.audioContext.currentTime;
+
+    // Discordant dual oscillator for "buzzer" effect
+    const osc1 = this.audioContext.createOscillator();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(100, now);
+    osc1.frequency.linearRampToValueAtTime(50, now + 0.5); // Pitch drop
+
+    const osc2 = this.audioContext.createOscillator();
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(145, now); // Dissonant interval
+    osc2.frequency.linearRampToValueAtTime(70, now + 0.5);
+
+    const gain = this.audioContext.createGain();
+    gain.connect(this.audioContext.destination);
+    
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.5);
+    osc2.stop(now + 0.5);
   }
 
   public playSuccess() {
-    this.playTone(600, 0.1, 'sine');
-    setTimeout(() => this.playTone(800, 0.2, 'sine'), 100);
+    this.init();
+    if (!this.audioContext) return;
+    
+    // Simple Arpeggio
+    this.playTone(523.25, 0.1); // C5
+    setTimeout(() => this.playTone(659.25, 0.1), 100); // E5
+    setTimeout(() => this.playTone(783.99, 0.2), 200); // G5
   }
 }
 

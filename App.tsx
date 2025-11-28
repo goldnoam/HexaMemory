@@ -51,15 +51,8 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="relative z-10 w-full p-6 text-center">
-        <div className="inline-block px-6 py-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400 font-mono">
-          <p className="mb-1">(C) Noam Gold AI 2025</p>
-          <div className="flex items-center justify-center gap-2">
-            <span>Send Feedback</span>
-            <span className="w-1 h-1 rounded-full bg-gray-400"></span>
-            <a href="mailto:gold.noam@gmail.com" className="text-blue-500 hover:text-blue-400 hover:underline">
-              gold.noam@gmail.com
-            </a>
-          </div>
+        <div className="inline-block px-6 py-3 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-gray-800 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono">
+          <p>(C) Noam Gold AI 2025 Send Feedback gold.noam@gmail.com</p>
         </div>
       </footer>
     </div>

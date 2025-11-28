@@ -6,18 +6,18 @@ import { audioService } from '../services/audioService';
 import { Zap, Heart, Star, Sun, Anchor, Flame, Trophy } from 'lucide-react';
 
 const SECTIONS: GameSectionData[] = [
-  { id: 0, color: '#DC2626', activeColor: '#FF0000', icon: Heart, frequency: 261.63, label: 'Red Heart' },   // C4
-  { id: 1, color: '#2563EB', activeColor: '#0044FF', icon: Star, frequency: 293.66, label: 'Blue Star' },    // D4
-  { id: 2, color: '#059669', activeColor: '#00FF88', icon: Zap, frequency: 329.63, label: 'Green Bolt' },    // E4
-  { id: 3, color: '#D97706', activeColor: '#FFCC00', icon: Sun, frequency: 349.23, label: 'Yellow Sun' },    // F4
-  { id: 4, color: '#7C3AED', activeColor: '#AA00FF', icon: Anchor, frequency: 392.00, label: 'Purple Anchor' }, // G4
-  { id: 5, color: '#EA580C', activeColor: '#FF6600', icon: Flame, frequency: 440.00, label: 'Orange Flame' },  // A4
+  { id: 0, color: '#DC2626', activeColor: '#FF4444', icon: Heart, frequency: 261.63, label: 'Red Heart' },   // C4
+  { id: 1, color: '#2563EB', activeColor: '#4488FF', icon: Star, frequency: 329.63, label: 'Blue Star' },    // E4
+  { id: 2, color: '#059669', activeColor: '#00FF99', icon: Zap, frequency: 392.00, label: 'Green Bolt' },    // G4
+  { id: 3, color: '#D97706', activeColor: '#FFDD00', icon: Sun, frequency: 523.25, label: 'Yellow Sun' },    // C5
+  { id: 4, color: '#7C3AED', activeColor: '#CC44FF', icon: Anchor, frequency: 440.00, label: 'Purple Anchor' }, // A4
+  { id: 5, color: '#EA580C', activeColor: '#FF8800', icon: Flame, frequency: 493.88, label: 'Orange Flame' },  // B4
 ];
 
 const INITIAL_SPEED = 800;
-const MIN_SPEED = 250;
-const SPEED_DECREMENT = 50;
-const TURN_TIMEOUT_BASE = 5000; // 5 seconds initial time per move
+const MIN_SPEED = 200;
+const SPEED_DECREMENT = 60;
+const TURN_TIMEOUT_BASE = 5000; 
 
 export const Board: React.FC = () => {
   // Game State
@@ -27,21 +27,19 @@ export const Board: React.FC = () => {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(100); // Percentage
+  const [timeLeft, setTimeLeft] = useState(100); 
+  const [errorState, setErrorState] = useState(false);
   
-  // Refs for logic that doesn't need immediate re-renders or interval management
   const sequenceRef = useRef<number[]>([]);
   const timerRef = useRef<number | null>(null);
   const turnStartTimeRef = useRef<number>(0);
   const turnDurationRef = useRef<number>(TURN_TIMEOUT_BASE);
 
-  // Load high score
   useEffect(() => {
     const saved = localStorage.getItem('hexa-memory-highscore');
     if (saved) setHighScore(parseInt(saved, 10));
   }, []);
 
-  // Update high score
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
@@ -54,7 +52,6 @@ export const Board: React.FC = () => {
     if (gameState === GameState.PLAYER_TURN) {
       turnStartTimeRef.current = Date.now();
       
-      // Clear any existing timer
       if (timerRef.current) clearInterval(timerRef.current);
 
       timerRef.current = window.setInterval(() => {
@@ -67,7 +64,7 @@ export const Board: React.FC = () => {
         } else {
           setTimeLeft((remaining / turnDurationRef.current) * 100);
         }
-      }, 50); // High refresh rate for smooth gauge
+      }, 50); 
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       setTimeLeft(100);
@@ -76,14 +73,14 @@ export const Board: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameState]); // Re-run when game state changes to PLAYER_TURN
+  }, [gameState]);
 
-  const playSoundAndHighlight = useCallback((id: number) => {
+  const playSoundAndHighlight = useCallback((id: number, duration: number = 300) => {
     const section = SECTIONS.find(s => s.id === id);
     if (section) {
       setActiveId(id);
       audioService.playTone(section.frequency);
-      setTimeout(() => setActiveId(null), 300);
+      setTimeout(() => setActiveId(null), duration);
     }
   }, []);
 
@@ -91,22 +88,19 @@ export const Board: React.FC = () => {
     setGameState(GameState.PLAYING_SEQUENCE);
     setPlayerInput([]);
     
-    // Calculate speed based on sequence length
+    // Dynamic speed
     const speed = Math.max(MIN_SPEED, INITIAL_SPEED - (sequenceRef.current.length * SPEED_DECREMENT));
     
-    // Initial delay before playing
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 600));
 
     for (let i = 0; i < sequenceRef.current.length; i++) {
       const id = sequenceRef.current[i];
-      playSoundAndHighlight(id);
-      await new Promise(r => setTimeout(r, speed)); // Wait for sound + gap
+      playSoundAndHighlight(id, speed * 0.6); // Highlight shorter than full interval
+      await new Promise(r => setTimeout(r, speed)); 
     }
 
-    // Give a small buffer before player can start
     setGameState(GameState.PLAYER_TURN);
-    // Reset turn timer duration slightly faster as game progresses
-    turnDurationRef.current = Math.max(2000, TURN_TIMEOUT_BASE - (sequenceRef.current.length * 100));
+    turnDurationRef.current = Math.max(2000, TURN_TIMEOUT_BASE - (sequenceRef.current.length * 50));
   };
 
   const startNewRound = () => {
@@ -122,7 +116,6 @@ export const Board: React.FC = () => {
     sequenceRef.current = [];
     setSequence([]);
     setGameState(GameState.IDLE);
-    // Initialize audio context on user interaction
     audioService.playSuccess(); 
     
     setTimeout(() => {
@@ -131,36 +124,38 @@ export const Board: React.FC = () => {
   };
 
   const handleGameOver = () => {
+    setErrorState(true);
     setGameState(GameState.GAME_OVER);
     audioService.playError();
     if (timerRef.current) clearInterval(timerRef.current);
+    setTimeout(() => setErrorState(false), 500);
   };
 
   const handleSectionClick = (id: number) => {
     if (gameState !== GameState.PLAYER_TURN) return;
 
-    // Reset timer for the next click (optional mechanic: reset timer on every correct click? 
-    // The prompt implies a "timer gauge", usually for the whole turn or per click. 
-    // I'll make it per-turn limit, but reset it on successful click to allow thinking for next step?)
-    // Let's reset the timer on each valid input to keep the flow going.
+    // Reset timer on input to give thinking time
     turnStartTimeRef.current = Date.now();
 
-    playSoundAndHighlight(id);
     const newInput = [...playerInput, id];
     setPlayerInput(newInput);
 
-    // Check correctness
     const currentIndex = newInput.length - 1;
     if (newInput[currentIndex] !== sequenceRef.current[currentIndex]) {
+      // Immediate failure feedback
       handleGameOver();
       return;
     }
 
+    // Success feedback for individual click
+    playSoundAndHighlight(id);
+
     // Check if round complete
     if (newInput.length === sequenceRef.current.length) {
       setScore(s => s + 1);
-      setGameState(GameState.PLAYING_SEQUENCE); // Lock input immediately
-      setTimeout(startNewRound, 1000);
+      setGameState(GameState.PLAYING_SEQUENCE);
+      // Small delay before next round
+      setTimeout(startNewRound, 800);
     }
   };
 
@@ -169,12 +164,14 @@ export const Board: React.FC = () => {
       {/* HUD Header */}
       <div className="w-full flex justify-between items-center mb-8 px-4 py-3 bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg z-20">
          <div className="flex items-center space-x-2">
-           <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-           <span className="text-sm font-arcade text-gray-600 dark:text-gray-300 tracking-wider">LIVE MEMORY FEED</span>
+           <div className={`w-3 h-3 rounded-full ${gameState === GameState.PLAYER_TURN ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+           <span className="text-sm font-arcade text-gray-600 dark:text-gray-300 tracking-wider">
+              {gameState === GameState.PLAYER_TURN ? 'PLAYER ACTIVE' : 'SYSTEM LOCK'}
+           </span>
          </div>
          <div className="flex items-center space-x-4">
             <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase text-gray-500 font-bold">Best Run</span>
+                <span className="text-[10px] uppercase text-gray-500 font-bold">High Score</span>
                 <div className="flex items-center text-yellow-500">
                     <Trophy size={16} className="mr-1" />
                     <span className="font-arcade font-bold text-xl">{highScore}</span>
@@ -184,18 +181,25 @@ export const Board: React.FC = () => {
       </div>
 
       {/* 3D Board Container */}
-      <div className="relative w-[360px] h-[360px] sm:w-[450px] sm:h-[450px] perspective-container">
+      <div className={`relative w-[360px] h-[360px] sm:w-[450px] sm:h-[450px] perspective-container ${errorState ? 'animate-shake' : ''}`}>
         <div 
           className="absolute inset-0 preserve-3d transition-transform duration-700 ease-out"
           style={{ 
-            transform: gameState === GameState.IDLE ? 'rotateX(0deg)' : 'rotateX(20deg)',
+            transform: gameState === GameState.IDLE ? 'rotateX(0deg)' : 'rotateX(25deg)',
           }}
         >
           {/* Base Plate Shadow */}
-          <div className="absolute inset-0 rounded-full bg-black/20 blur-xl transform translate-y-20 scale-90" />
+          <div className="absolute inset-0 rounded-full bg-black/30 blur-2xl transform translate-y-20 scale-90" />
           
           {/* Main Board Surface */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 dark:from-gray-800 dark:to-gray-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-8 border-gray-300 dark:border-gray-700 flex items-center justify-center preserve-3d">
+          <div className={`
+              absolute inset-0 rounded-full 
+              bg-gradient-to-br from-gray-200 to-gray-400 dark:from-gray-800 dark:to-gray-900 
+              shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-8 border-gray-300 dark:border-gray-700 
+              flex items-center justify-center preserve-3d
+              ${errorState ? 'border-red-500 shadow-red-500/50' : ''}
+              transition-colors duration-200
+            `}>
             
              {/* Decorative lines */}
              <div className="absolute inset-4 rounded-full border border-dashed border-gray-400/30 pointer-events-none" />
@@ -218,7 +222,7 @@ export const Board: React.FC = () => {
                 isActive={activeId === section.id}
                 disabled={gameState !== GameState.PLAYER_TURN}
                 onClick={handleSectionClick}
-                angle={index * 60} // 360 / 6 = 60 degrees apart
+                angle={index * 60} 
               />
             ))}
           </div>
@@ -231,7 +235,10 @@ export const Board: React.FC = () => {
             <p className="text-gray-500 animate-bounce">Press START to begin simulation</p>
         )}
         {gameState === GameState.GAME_OVER && (
-            <p className="text-red-500 font-arcade">SYSTEM FAILURE. SEQUENCE BROKEN.</p>
+            <p className="text-red-500 font-arcade font-bold tracking-widest">SYSTEM FAILURE // SEQUENCE BROKEN</p>
+        )}
+        {gameState === GameState.PLAYER_TURN && (
+            <p className="text-blue-500 font-arcade text-sm">REPEAT SEQUENCE</p>
         )}
       </div>
     </div>

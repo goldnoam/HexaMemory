@@ -124,6 +124,11 @@ export const Board: React.FC = () => {
   };
 
   const handleGameOver = () => {
+    // Haptic feedback if available
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
+
     setErrorState(true);
     setGameState(GameState.GAME_OVER);
     audioService.playError();

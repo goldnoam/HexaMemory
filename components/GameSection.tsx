@@ -35,7 +35,7 @@ export const GameSection: React.FC<Props> = ({ data, isActive, disabled, onClick
         transform: `translate(${x}px, ${y}px) translateZ(${isActive ? '25px' : '0px'})`,
         backgroundColor: isActive ? data.activeColor : data.color,
         boxShadow: isActive
-          ? `0 0 50px ${data.activeColor}, inset 0 0 30px rgba(255,255,255,0.7)`
+          ? `0 0 60px ${data.activeColor}, 0 0 30px ${data.activeColor}, inset 0 0 40px rgba(255,255,255,0.9)`
           : `0 10px 15px -3px rgba(0, 0, 0, 0.5), inset 0 -5px 10px rgba(0,0,0,0.2)`,
         filter: isActive ? 'brightness(1.3)' : 'brightness(0.9)',
       }}
@@ -53,7 +53,7 @@ export const GameSection: React.FC<Props> = ({ data, isActive, disabled, onClick
       
       {/* Visual Ripple Effect on Activation */}
       {isActive && (
-        <div className="absolute inset-0 rounded-full border-4 border-white opacity-0 animate-ripple pointer-events-none" />
+        <div className="absolute inset-0 rounded-full border-[6px] border-white opacity-0 animate-ripple pointer-events-none" />
       )}
       
       {/* 3D Side Effect */}

@@ -1,0 +1,5 @@
+{
+  "name": "HexaMemory 3D",
+  "description": "A 3D-styled, 6-section Simon-like memory game featuring icons, colors, and synthesized audio. Test your memory with increasing speed and complexity.",
+  "requestFramePermissions": []
+}
